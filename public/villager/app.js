@@ -7,7 +7,7 @@ const API_BASE = (() => {
   }
   const savedUrl = localStorage.getItem('sp_backend_url');
   if (savedUrl) return savedUrl;
-  return 'https://swachh-palle-backend.onrender.com';
+  return 'https://swachh-palle.onrender.com';
 })();
 
 // Translation Dictionary
