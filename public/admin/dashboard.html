@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Civic Stream // Admin Triage Dashboard</title>
+  <!-- Google Fonts - Inter & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  
+  <!-- Leaflet CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="admin.css?v=3">
+
+  <!-- Firebase Client Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body style="display: none;">
+
+  <!-- Firebase Initialization Script -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBeoLlBQvDk6XHHUrTiFX-a7zve2esq8cU",
+      authDomain: "swachh-palle-c780c.firebaseapp.com",
+      projectId: "swachh-palle-c780c",
+      storageBucket: "swachh-palle-c780c.firebasestorage.app",
+      messagingSenderId: "578766992770",
+      appId: "1:578766992770:web:e2731c52dc35e45d708b9b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+  </script>
+
+  <div class="dashboard-wrapper">
+    
+    <!-- Left Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo">
+          <span class="material-symbols-outlined">eco</span>
+        </div>
+        <div class="brand-text">
+          <h2>Swachh Palle</h2>
+          <p>Civic Stream Portal</p>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <a href="#" id="nav-triage" class="nav-link active">
+          <span class="material-symbols-outlined">dashboard</span>
+          Triage Dashboard
+        </a>
+        <a href="#" id="nav-citizens" class="nav-link">
+          <span class="material-symbols-outlined">group</span>
+          Manage Citizens
+        </a>
+      </nav>
+
+      <!-- Sidebar summary statistics -->
+      <div class="sidebar-stats">
+        <div class="stat-card">
+          <span class="stat-label">Active Incidents</span>
+          <span id="active-count-badge" class="stat-value">00</span>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="btn-admin-logout" class="btn-logout">
+          <span class="material-symbols-outlined">logout</span>
+          Terminate Session
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Action App Bar -->
+      <header class="sys-header">
+        <div class="header-left">
+          <h1 class="sys-title">Triage Command Center</h1>
+        </div>
+        <div class="header-right">
+          <span class="sys-status active-pulse">System Live</span>
+          <button id="btn-refresh" class="btn-terminal">
+            <span class="material-symbols-outlined">refresh</span>
+            Refresh Feed
+          </button>
+        </div>
+      </header>
+
+      <!-- Metrics Dashboard Grid -->
+      <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 0 24px 20px 24px;">
+        <div class="metric-card" style="background: var(--surface, #ffffff); border: 1px solid var(--border, #e5e7eb); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow, 0 1px 3px rgba(0,0,0,0.1));">
+          <span class="metric-lbl" style="font-size: 11px; color: var(--text-secondary, #6b7280); font-weight: 600; letter-spacing: 0.5px;">VILLAGE CLEANLINESS INDEX</span>
+          <span class="metric-val" id="metric-cleanliness" style="font-size: 28px; font-weight: bold; color: #16a34a;">0%</span>
+          <div style="background: rgba(0,0,0,0.05); height: 6px; border-radius: 3px; overflow: hidden;">
+            <div id="metric-cleanliness-bar" style="background: #16a34a; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+        <div class="metric-card" style="background: var(--surface, #ffffff); border: 1px solid var(--border, #e5e7eb); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow, 0 1px 3px rgba(0,0,0,0.1));">
+          <span class="metric-lbl" style="font-size: 11px; color: var(--text-secondary, #6b7280); font-weight: 600; letter-spacing: 0.5px;">PENDING INCIDENTS</span>
+          <span class="metric-val" id="metric-pending" style="font-size: 28px; font-weight: bold; color: #ef4444;">0</span>
+          <span style="font-size: 11px; color: var(--text-secondary, #6b7280);">Awaiting administrative verification</span>
+        </div>
+        <div class="metric-card" style="background: var(--surface, #ffffff); border: 1px solid var(--border, #e5e7eb); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow, 0 1px 3px rgba(0,0,0,0.1));">
+          <span class="metric-lbl" style="font-size: 11px; color: var(--text-secondary, #6b7280); font-weight: 600; letter-spacing: 0.5px;">RESOLVED ISSUES</span>
+          <span class="metric-val" id="metric-resolved" style="font-size: 28px; font-weight: bold; color: #16a34a;">0</span>
+          <span style="font-size: 11px; color: var(--text-secondary, #6b7280);">Cleanliness tickets successfully triaged</span>
+        </div>
+        <div class="metric-card" style="background: var(--surface, #ffffff); border: 1px solid var(--border, #e5e7eb); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow, 0 1px 3px rgba(0,0,0,0.1));">
+          <span class="metric-lbl" style="font-size: 11px; color: var(--text-secondary, #6b7280); font-weight: 600; letter-spacing: 0.5px;">SPAM / REJECTED REPORTS</span>
+          <span class="metric-val" id="metric-rejected" style="font-size: 28px; font-weight: bold; color: #9ca3af;">0</span>
+          <span style="font-size: 11px; color: var(--text-secondary, #6b7280);">Identified as fake or spam entries</span>
+        </div>
+      </div>
+
+      <!-- Triage View Container -->
+      <div id="triage-view">
+        <!-- Top Half: Geographic Map View -->
+        <section class="map-section" style="position: relative;">
+          <div id="map-container"></div>
+          <div class="map-overlay-legend" style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: rgba(255,255,255,0.95); border: 1px solid var(--border, #e5e7eb); border-radius: 8px; box-shadow: var(--shadow, 0 1px 3px rgba(0,0,0,0.1)); position: absolute; top: 12px; right: 12px; z-index: 1000; width: 180px; font-family: inherit; font-size: 11px;">
+            
+            <div style="font-weight: 700; border-bottom: 1px solid var(--border, #e5e7eb); padding-bottom: 4px; color: var(--text-primary, #111827); text-transform: uppercase; letter-spacing: 0.5px;">Filter Map Status</div>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary, #111827);">
+              <input type="checkbox" id="filter-pending" checked style="cursor: pointer;">
+              <span class="marker-dot red" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+              Pending Alerts
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary, #111827);">
+              <input type="checkbox" id="filter-resolved" checked style="cursor: pointer;">
+              <span class="marker-dot green" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a;"></span>
+              Resolved Status
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary, #111827);">
+              <input type="checkbox" id="filter-rejected" checked style="cursor: pointer;">
+              <span class="marker-dot grey" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #9ca3af;"></span>
+              Rejected / Spam
+            </label>
+
+            <div style="font-weight: 700; border-bottom: 1px solid var(--border, #e5e7eb); padding-bottom: 4px; margin-top: 6px; color: var(--text-primary, #111827); text-transform: uppercase; letter-spacing: 0.5px;">Filter Map Category</div>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary, #111827);">
+              <input type="checkbox" id="filter-dustbin" checked style="cursor: pointer;">
+              🗑️ Full Dustbin
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary, #111827);">
+              <input type="checkbox" id="filter-drain" checked style="cursor: pointer;">
+              💧 Blocked Drain
+            </label>
+          </div>
+        </section>
+
+        <!-- Bottom Half: Incident Table Grid -->
+        <section class="triage-section">
+          <div class="table-card">
+            <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <h3>Active Incident Operational Queue</h3>
+              <button id="btn-clear-processed-tickets" class="btn-terminal" style="background-color: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 13px;">
+                Clear Solved & Spam
+              </button>
+            </div>
+            <div class="table-wrapper">
+              <table class="triage-table">
+                <thead>
+                  <tr>
+                    <th style="width: 120px;">TICKET_ID</th>
+                    <th style="width: 180px;">CATEGORY</th>
+                    <th style="width: 130px;">COORDINATES</th>
+                    <th style="width: 180px;">TIMESTAMP</th>
+                    <th style="width: 110px;">STATUS</th>
+                    <th style="text-align: right; width: 140px;">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="triage-tbody">
+                  <!-- Dynamically populated rows -->
+                  <tr>
+                    <td colspan="6" class="table-loading">Syncing active queue telemetry...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Citizens View Container (Hidden by default) -->
+      <div id="citizens-view" style="display: none;">
+        <section class="triage-section">
+          <div class="table-card">
+            <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <h3>Citizen Database Queue</h3>
+              <button id="btn-clear-demo-citizens" class="btn-terminal" style="background-color: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 13px;">
+                Clear All Demo Citizens
+              </button>
+            </div>
+            <div class="table-wrapper">
+              <table class="triage-table">
+                <thead>
+                  <tr>
+                    <th>CITIZEN_ID</th>
+                    <th>NAME</th>
+                    <th>CIVIC_POINTS</th>
+                    <th>CREATED_AT</th>
+                    <th style="text-align: right; width: 140px;">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="citizens-tbody">
+                  <!-- Dynamically populated rows -->
+                  <tr>
+                    <td colspan="5" class="table-loading">Syncing citizen registry...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Incident Detailed Modal Viewer -->
+  <div id="ticket-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-ticket-id">Incident ID: SP-1001</h3>
+        <button id="btn-modal-close" class="modal-close-btn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid">
+          <div class="modal-image-container">
+            <img id="modal-img" src="" alt="Incident snapshot">
+          </div>
+          <div class="modal-info">
+            <div class="info-group">
+              <span class="info-lbl">Category</span>
+              <span class="info-val" id="modal-category">--</span>
+            </div>
+            <div class="info-group">
+              <span class="info-lbl">Reporter ID</span>
+              <span class="info-val" id="modal-reporter">--</span>
+            </div>
+            <div class="info-group">
+              <span class="info-lbl">GPS Coordinates</span>
+              <span class="info-val" id="modal-coords">--</span>
+            </div>
+            <div class="info-group">
+              <span class="info-lbl">Timestamp</span>
+              <span class="info-val" id="modal-timestamp">--</span>
+            </div>
+            <div class="info-group">
+              <span class="info-lbl">Verification Index</span>
+              <span class="info-val" id="modal-status">--</span>
+            </div>
+            <div class="info-group" id="resolution-upload-group" style="display: none; flex-direction: column; gap: 6px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
+              <span class="info-lbl" style="font-weight: 600; font-size: 11px; color: var(--critical-text, #b42318);">CLEANED UP SNAPSHOT (REQUIRED)</span>
+              <input type="file" id="modal-resolve-file" accept="image/*" style="font-family: inherit; font-size: 12px; color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; padding: 6px; width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.02);">
+              <div id="modal-resolve-preview-container" style="display: none; margin-top: 8px;">
+                <img id="modal-resolve-preview" src="" style="width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border);">
+              </div>
+            </div>
+            <div class="modal-actions" id="modal-actions-container" style="margin-top: 16px;">
+              <!-- Dynamic resolve/reject buttons -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="admin.js"></script>
+</body>
+</html>

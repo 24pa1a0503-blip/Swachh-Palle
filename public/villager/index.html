@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swachh Palle - Villager Portal</title>
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body style="display: none;">
+
+  <!-- Authentication Guard Script -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBeoLlBQvDk6XHHUrTiFX-a7zve2esq8cU",
+      authDomain: "swachh-palle-c780c.firebaseapp.com",
+      projectId: "swachh-palle-c780c",
+      storageBucket: "swachh-palle-c780c.firebasestorage.app",
+      messagingSenderId: "578766992770",
+      appId: "1:578766992770:web:e2731c52dc35e45d708b9b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged((user) => {
+      const mockUser = localStorage.getItem('sp_mock_session');
+      if (!user && !mockUser) {
+        window.location.href = 'login.html';
+      } else {
+        document.body.style.display = 'flex';
+      }
+    });
+  </script>
+
+  <!-- Main App Wrapper -->
+  <div class="app-container">
+    
+    <!-- Top App Bar -->
+    <header class="app-bar">
+      <div class="brand">
+        <div class="logo">
+          <span class="material-symbols-outlined">eco</span>
+        </div>
+        <h1 class="app-title" data-i18n="app_title">Swachh Palle</h1>
+      </div>
+
+      <!-- Desktop Navigation Menu -->
+      <nav class="desktop-nav">
+        <button class="nav-item active" data-tab="tab-home">
+          <span class="material-symbols-outlined">home</span>
+          <span class="nav-label" data-i18n="nav_home">Home</span>
+        </button>
+        <button class="nav-item" data-tab="tab-activity">
+          <span class="material-symbols-outlined">leaderboard</span>
+          <span class="nav-label" data-i18n="nav_activity">Activity</span>
+        </button>
+        <button class="nav-item" data-tab="tab-profile">
+          <span class="material-symbols-outlined">person</span>
+          <span class="nav-label" data-i18n="nav_profile">Profile</span>
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <button id="lang-toggle" class="btn-lang">తెలుగు</button>
+        <button id="btn-logout" class="btn-logout" style="display: none;">Logout</button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Tab 1: Home -->
+      <section id="tab-home" class="tab-panel active">
+        <!-- Welcome Banner -->
+        <div class="welcome-card">
+          <div class="welcome-text">
+            <h2 data-i18n="welcome_back">Namaskaram!</h2>
+            <p data-i18n="welcome_sub">Let's keep our village clean today.</p>
+          </div>
+          <div class="points-badge">
+            <span class="material-symbols-outlined star-icon">stars</span>
+            <div class="badge-text">
+              <span class="points-count" id="user-points-display">0</span>
+              <span class="points-label" data-i18n="points_label">Points</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two column grid on desktop -->
+        <div class="home-grid">
+          <!-- Cleanliness Index Card -->
+          <div class="stats-card">
+            <div class="card-header">
+              <span class="material-symbols-outlined card-icon text-green">analytics</span>
+              <h3 data-i18n="clean_index">Village Cleanliness</h3>
+              <span class="percentage">78%</span>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar" style="width: 78%;"></div>
+            </div>
+            <p class="card-footer" data-i18n="clean_index_sub">Level Up! 5 reports resolved this week.</p>
+          </div>
+
+          <!-- Quick Guidelines -->
+          <div class="guidelines-card">
+            <h4 data-i18n="how_it_works">How to Earn Rewards:</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <p data-i18n="step_1">Click 'REPORT' and take a clear picture of trash or blocked drains.</p>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <p data-i18n="step_2">Ensure GPS location is enabled before submitting.</p>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <p data-i18n="step_3">Get 50 Civic Points once the admin resolves your ticket!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary Floating Action Area -->
+        <div class="action-area">
+          <button id="btn-report-fab" class="fab-report">
+            <div class="fab-inner">
+              <span class="material-symbols-outlined camera-icon">photo_camera</span>
+              <span class="fab-label" data-i18n="report_button">REPORT</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Tab 2: Activity / Leaderboard -->
+      <section id="tab-activity" class="tab-panel">
+        <div class="activity-grid">
+          <div>
+            <!-- Recent Activity Tab Header -->
+            <div class="section-title-wrapper">
+              <h2 data-i18n="recent_activity">Recent Reports</h2>
+            </div>
+            
+            <div class="recent-list" id="tickets-list">
+              <!-- Dynamically populated tickets -->
+              <div class="list-placeholder" data-i18n="loading">Loading activities...</div>
+            </div>
+          </div>
+
+          <div>
+            <!-- Leaderboard -->
+            <div class="section-title-wrapper">
+              <h2 data-i18n="leaderboard_title">Top Swachh Citizens</h2>
+            </div>
+            
+            <div class="leaderboard-card">
+              <div class="leaderboard-list" id="leaderboard-list">
+                <!-- Dynamically populated leaders -->
+                <div class="list-placeholder" data-i18n="loading">Loading leaderboard...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 3: Profile -->
+      <section id="tab-profile" class="tab-panel">
+        <div class="profile-grid">
+          <div class="profile-header-card">
+            <div class="profile-avatar">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <h2 id="profile-name-title">Citizen</h2>
+            <p class="profile-id">ID: <span id="profile-id-display">--</span></p>
+            
+            <div class="profile-stats">
+              <div class="stat-box">
+                <span class="stat-val" id="profile-points-display">0</span>
+                <span class="stat-lbl" data-i18n="civic_points">Civic Points</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-val" id="profile-reports-count">0</span>
+                <span class="stat-lbl" data-i18n="total_reports">Submitted</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-settings-card">
+            <h3 data-i18n="edit_profile">Edit Profile</h3>
+            <form id="edit-profile-form">
+              <div class="form-group">
+                <label for="input-display-name" data-i18n="full_name">Full Name</label>
+                <input type="text" id="input-display-name" placeholder="Enter your name" required>
+              </div>
+              <div class="form-group">
+                <label for="input-display-identifier">Contact Info (Email/Phone)</label>
+                <input type="text" id="input-display-identifier" readonly style="background-color: #f3f4f6; cursor: not-allowed; opacity: 0.8; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; width: 100%; font-family: inherit; font-size: 14px; box-sizing: border-box;">
+              </div>
+              <button type="submit" class="btn-primary" data-i18n="save_changes">Save Changes</button>
+            </form>
+          </div>
+
+          <!-- Account Security Card -->
+          <div class="profile-settings-card" id="account-security-card" style="margin-top: 16px;">
+            <h3 data-i18n="account_security">Account Security</h3>
+            <p data-i18n="account_security_desc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Link both your Email and Phone number so you can log in using either method without losing your points.</p>
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px;">
+              <div>
+                <span class="info-lbl" data-i18n="linked_email">Linked Email</span>
+                <span id="linked-email-status" class="info-val" style="display: block; font-weight: 600;" data-i18n="not_linked">Not Linked</span>
+              </div>
+              <button id="btn-link-email" class="btn-primary" style="padding: 6px 12px; font-size: 12px; width: auto; display: none;" data-i18n="link_email">Link Email</button>
+            </div>
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px;">
+              <div>
+                <span class="info-lbl" data-i18n="linked_phone">Linked Phone</span>
+                <span id="linked-phone-status" class="info-val" style="display: block; font-weight: 600;" data-i18n="not_linked">Not Linked</span>
+              </div>
+              <button id="btn-link-phone" class="btn-primary" style="padding: 6px 12px; font-size: 12px; width: auto; display: none;" data-i18n="link_phone">Link Phone</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="app-info-card">
+          <p><strong>Swachh Palle App</strong> v1.0.0</p>
+          <p data-i18n="app_footer">Building cleaner villages, together.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile only) -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="tab-home">
+        <div class="nav-pill">
+          <span class="material-symbols-outlined">home</span>
+        </div>
+        <span class="nav-label" data-i18n="nav_home">Home</span>
+      </button>
+      <button class="nav-item" data-tab="tab-activity">
+        <div class="nav-pill">
+          <span class="material-symbols-outlined">leaderboard</span>
+        </div>
+        <span class="nav-label" data-i18n="nav_activity">Activity</span>
+      </button>
+      <button class="nav-item" data-tab="tab-profile">
+        <div class="nav-pill">
+          <span class="material-symbols-outlined">person</span>
+        </div>
+        <span class="nav-label" data-i18n="nav_profile">Profile</span>
+      </button>
+    </nav>
+
+
+
+    <!-- Upload / Report Dialog Overlay -->
+    <div id="report-dialog" class="dialog-overlay">
+      <div class="dialog-container">
+        <div class="dialog-header">
+          <h3 data-i18n="submit_issue">Report Waste/Issue</h3>
+          <button id="btn-dialog-close" class="btn-icon-close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <form id="report-form" class="dialog-body">
+          <!-- Camera Capture Area -->
+          <div class="photo-capture-area" id="photo-upload-zone">
+            <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
+            <div class="upload-prompt" id="upload-prompt-text">
+              <span class="material-symbols-outlined upload-icon">add_a_photo</span>
+              <p data-i18n="tap_photo">Tap to capture live photo (Camera Only)</p>
+            </div>
+            <img id="captured-preview" class="image-preview" alt="Preview" style="display: none;">
+          </div>
+
+          <!-- Category Selector -->
+          <div class="form-group">
+            <label for="category-select" data-i18n="select_category">Select Category</label>
+            <select id="category-select" class="form-select" required>
+              <option value="🗑️ Full Dustbin" data-i18n="opt_dustbin">🗑️ Full Dustbin</option>
+              <option value="💧 Blocked Drain" data-i18n="opt_drain">💧 Blocked Drain</option>
+            </select>
+          </div>
+
+          <!-- Geolocation Status -->
+          <div class="location-status-card">
+            <span class="material-symbols-outlined text-green pulse-icon" id="loc-icon">location_on</span>
+            <div class="loc-text">
+              <span class="loc-title" data-i18n="gps_title">GPS Geolocation</span>
+              <span class="loc-coord" id="loc-coords-display" data-i18n="gps_fetching">Fetching current location...</span>
+            </div>
+          </div>
+
+          <!-- Submit buttons -->
+          <div class="dialog-actions">
+            <button type="button" id="btn-report-cancel" class="btn-secondary" data-i18n="cancel">Cancel</button>
+            <button type="submit" id="btn-report-submit" class="btn-primary" data-i18n="submit">Submit Report</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Link Account Dialog Overlay -->
+    <div id="link-dialog" class="dialog-overlay">
+      <div class="dialog-container" style="max-width: 400px; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-md); overflow: hidden;">
+        <div class="dialog-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background-color: var(--surface-bg);">
+          <h3 id="link-dialog-title" data-i18n="link_account" style="font-size: 16px; font-weight: 600; color: var(--text-primary);">Link Account</h3>
+          <button id="btn-link-dialog-close" class="btn-icon-close" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center;">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        
+        <!-- Link Phone Form -->
+        <div id="link-phone-form-container" style="display: none; padding: 20px; flex-direction: column; gap: 16px;">
+          <div class="form-group">
+            <label for="link-phone-input" data-i18n="enter_mobile" style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; display: block;">Enter Mobile Number</label>
+            <input type="tel" id="link-phone-input" placeholder="+919876543210" style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; width: 100%; font-family: inherit; font-size: 14px; box-sizing: border-box; background: var(--surface);">
+          </div>
+          <!-- Recaptcha Container for phone linking -->
+          <div id="link-recaptcha-container"></div>
+          <button id="btn-send-link-otp" data-i18n="send_otp" class="btn-primary" style="width: 100%; font-family: inherit; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">Send Verification OTP</button>
+          
+          <div id="link-otp-group" style="display: none; flex-direction: column; gap: 12px; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px;">
+            <label for="link-otp-input" data-i18n="enter_otp" style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; display: block;">Enter 6-Digit OTP</label>
+            <input type="text" id="link-otp-input" placeholder="123456" maxLength="6" style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; width: 100%; font-family: inherit; font-size: 16px; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 4px; background: var(--surface);">
+            <button id="btn-verify-link-otp" data-i18n="verify_link_phone" class="btn-primary" style="width: 100%; font-family: inherit; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">Verify & Link Phone</button>
+          </div>
+        </div>
+
+        <!-- Link Email Form -->
+        <div id="link-email-form-container" style="display: none; padding: 20px; flex-direction: column; gap: 16px;">
+          <div class="form-group">
+            <label for="link-email-input" data-i18n="email_address" style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; display: block;">Email Address</label>
+            <input type="email" id="link-email-input" placeholder="citizen@example.com" style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; width: 100%; font-family: inherit; font-size: 14px; box-sizing: border-box; background: var(--surface);">
+          </div>
+          <div class="form-group">
+            <label for="link-password-input" data-i18n="choose_password" style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; display: block;">Choose Password</label>
+            <input type="password" id="link-password-input" data-i18n-placeholder="password_placeholder" placeholder="Min. 6 characters" style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; width: 100%; font-family: inherit; font-size: 14px; box-sizing: border-box; background: var(--surface);">
+          </div>
+          <button id="btn-submit-link-email" data-i18n="link_email_account" class="btn-primary" style="width: 100%; font-family: inherit; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">Link Email Account</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Screen Overlay -->
+    <div id="success-dialog" class="dialog-overlay success-overlay">
+      <div class="success-container">
+        <!-- Animated Checkmark -->
+        <div class="checkmark-wrapper">
+          <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          </svg>
+          <div class="particles">
+            <span class="p p1"></span><span class="p p2"></span><span class="p p3"></span>
+            <span class="p p4"></span><span class="p p5"></span><span class="p p6"></span>
+            <span class="p p7"></span><span class="p p8"></span>
+          </div>
+        </div>
+        <h2 data-i18n="report_success">Report Filed!</h2>
+        <p data-i18n="success_sub">Thank you for helping keep our village clean. You will receive 50 points upon approval.</p>
+        <button id="btn-success-close" class="btn-primary mt-6" data-i18n="ok_button">Awesome</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swachh Palle - Sign In</title>
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body class="login-page-body">
+
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">
+        <span class="material-symbols-outlined">eco</span>
+      </div>
+      <h2>Swachh Palle</h2>
+      <p>Rural Cleanliness Initiative</p>
+    </div>
+
+    <!-- Tab Selection Buttons -->
+    <div class="login-tabs" style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+      <button type="button" id="tab-btn-phone" class="btn-tab active" style="flex: 1; background: none; border: none; padding: 8px; font-weight: 700; color: var(--primary); border-bottom: 2px solid var(--primary); cursor: pointer; font-family: inherit; font-size: 14px; outline: none;">Phone OTP</button>
+      <button type="button" id="tab-btn-email" class="btn-tab" style="flex: 1; background: none; border: none; padding: 8px; font-weight: 600; color: var(--text-secondary); cursor: pointer; font-family: inherit; font-size: 14px; outline: none;">Email & Password</button>
+    </div>
+    
+    <!-- Tab 1: Phone Login Container -->
+    <div id="phone-login-container">
+      <!-- Step 1: Phone Request -->
+      <form id="phone-login-form">
+        <div class="form-group">
+          <label for="login-phone">Mobile Phone Number</label>
+          <div class="phone-input-container">
+            <span class="phone-prefix">+91</span>
+            <input type="tel" id="login-phone" placeholder="9876543210" minlength="10" maxlength="10" required>
+          </div>
+        </div>
+        <div id="recaptcha-container"></div>
+        <button type="submit" id="btn-send-otp" class="btn-primary">Send Verification OTP</button>
+      </form>
+
+      <!-- Step 2: Verification Code -->
+      <form id="otp-verify-form" style="display: none;">
+        <div class="form-group">
+          <label for="login-otp">Enter Verification Code (OTP)</label>
+          <input type="text" id="login-otp" placeholder="123456" minlength="6" maxlength="6" required>
+        </div>
+        <button type="submit" id="btn-verify-otp" class="btn-primary">Verify & Sign In</button>
+        <button type="button" id="btn-change-phone" class="btn-secondary mt-3">Change Phone Number</button>
+      </form>
+    </div>
+
+    <!-- Tab 2: Email Login Container -->
+    <div id="email-login-container" style="display: none;">
+      <form id="email-login-form">
+        <div class="form-group">
+          <label for="login-email">Email Address</label>
+          <input type="email" id="login-email" placeholder="citizen@palle.in" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" required>
+        </div>
+
+        <div class="form-group" id="confirm-password-group" style="display: none;">
+          <label for="login-confirm-password">Confirm Password</label>
+          <input type="password" id="login-confirm-password" placeholder="••••••••">
+        </div>
+
+        <div id="email-auth-error" style="color: var(--error); font-size: 0.8rem; font-weight: 500; margin-bottom: 16px; display: none; text-align: left;"></div>
+
+        <button type="submit" id="btn-email-submit" class="btn-primary">Sign In with Email</button>
+        
+        <div style="text-align: center; margin-top: 16px;">
+          <a href="#" id="toggle-email-mode" style="color: var(--primary); font-size: 13px; text-decoration: none; font-weight: 600;">Need an account? Sign Up</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBeoLlBQvDk6XHHUrTiFX-a7zve2esq8cU",
+      authDomain: "swachh-palle-c780c.firebaseapp.com",
+      projectId: "swachh-palle-c780c",
+      storageBucket: "swachh-palle-c780c.firebasestorage.app",
+      messagingSenderId: "578766992770",
+      appId: "1:578766992770:web:e2731c52dc35e45d708b9b"
+    };
+
+    // Initialize Firebase client
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Disable reCAPTCHA verification for local testing with fictional numbers
+    auth.settings.appVerificationDisabledForTesting = true;
+
+    // Monitor Auth State - if already logged in, redirect to index.html
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        window.location.href = 'index.html';
+      }
+    });
+
+    // 1. Handle Tab Switching
+    const tabBtnPhone = document.getElementById('tab-btn-phone');
+    const tabBtnEmail = document.getElementById('tab-btn-email');
+    const phoneContainer = document.getElementById('phone-login-container');
+    const emailContainer = document.getElementById('email-login-container');
+
+    tabBtnPhone.addEventListener('click', () => {
+      tabBtnPhone.classList.add('active');
+      tabBtnPhone.style.color = 'var(--primary)';
+      tabBtnPhone.style.borderBottom = '2px solid var(--primary)';
+      
+      tabBtnEmail.classList.remove('active');
+      tabBtnEmail.style.color = 'var(--text-secondary)';
+      tabBtnEmail.style.borderBottom = 'none';
+
+      phoneContainer.style.display = 'block';
+      emailContainer.style.display = 'none';
+    });
+
+    tabBtnEmail.addEventListener('click', () => {
+      tabBtnEmail.classList.add('active');
+      tabBtnEmail.style.color = 'var(--primary)';
+      tabBtnEmail.style.borderBottom = '2px solid var(--primary)';
+      
+      tabBtnPhone.classList.remove('active');
+      tabBtnPhone.style.color = 'var(--text-secondary)';
+      tabBtnPhone.style.borderBottom = 'none';
+
+      phoneContainer.style.display = 'none';
+      emailContainer.style.display = 'block';
+    });
+
+    // 2. Phone OTP Authentication Logic
+    let confirmationResult = null;
+
+    const phoneLoginForm = document.getElementById('phone-login-form');
+    const otpVerifyForm = document.getElementById('otp-verify-form');
+    const phoneInput = document.getElementById('login-phone');
+    const otpInput = document.getElementById('login-otp');
+    const btnSendOtp = document.getElementById('btn-send-otp');
+    const btnVerifyOtp = document.getElementById('btn-verify-otp');
+    const btnChangePhone = document.getElementById('btn-change-phone');
+
+    // Initialize Recaptcha Verifier
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+      'size': 'invisible'
+    });
+
+    // Handle phone submission (Request OTP)
+    phoneLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phone = phoneInput.value.trim();
+      if (phone.length !== 10) {
+        alert('Please enter a valid 10-digit mobile number.');
+        return;
+      }
+      const fullPhoneNumber = "+91" + phone;
+
+      btnSendOtp.disabled = true;
+      btnSendOtp.textContent = 'Sending OTP...';
+
+      try {
+        confirmationResult = await auth.signInWithPhoneNumber(fullPhoneNumber, window.recaptchaVerifier);
+        phoneLoginForm.style.display = 'none';
+        otpVerifyForm.style.display = 'block';
+      } catch (error) {
+        console.error('Error sending SMS verification:', error);
+        alert('Failed to send OTP. Please check your phone number and try again. Error: ' + error.message);
+        btnSendOtp.disabled = false;
+        btnSendOtp.textContent = 'Send Verification OTP';
+        window.recaptchaVerifier.render().then(widgetId => {
+          window.grecaptcha.reset(widgetId);
+        }).catch(() => {});
+      }
+    });
+
+    // Handle OTP verification
+    otpVerifyForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const otp = otpInput.value.trim();
+      if (otp.length !== 6) {
+        alert('Please enter a 6-digit OTP code.');
+        return;
+      }
+
+      btnVerifyOtp.disabled = true;
+      btnVerifyOtp.textContent = 'Verifying...';
+
+      try {
+        const result = await confirmationResult.confirm(otp);
+        const user = result.user;
+        console.log('[AUTH] Verified phone user:', user.uid);
+      } catch (error) {
+        console.error('Error verifying SMS code:', error);
+        alert('Invalid OTP code. Please try again. Error: ' + error.message);
+        btnVerifyOtp.disabled = false;
+        btnVerifyOtp.textContent = 'Verify & Sign In';
+      }
+    });
+
+    // Enable change phone number
+    btnChangePhone.addEventListener('click', () => {
+      phoneLoginForm.style.display = 'block';
+      otpVerifyForm.style.display = 'none';
+      btnSendOtp.disabled = false;
+      btnSendOtp.textContent = 'Send Verification OTP';
+    });
+
+    // 3. Email & Password Authentication Logic
+    const emailLoginForm = document.getElementById('email-login-form');
+    const emailInput = document.getElementById('login-email');
+    const passwordInput = document.getElementById('login-password');
+    const confirmPasswordGroup = document.getElementById('confirm-password-group');
+    const confirmPasswordInput = document.getElementById('login-confirm-password');
+    const emailAuthError = document.getElementById('email-auth-error');
+    const btnEmailSubmit = document.getElementById('btn-email-submit');
+    const toggleEmailMode = document.getElementById('toggle-email-mode');
+
+    let isRegisterMode = false;
+
+    toggleEmailMode.addEventListener('click', (e) => {
+      e.preventDefault();
+      isRegisterMode = !isRegisterMode;
+      emailAuthError.style.display = 'none';
+
+      if (isRegisterMode) {
+        confirmPasswordGroup.style.display = 'block';
+        confirmPasswordInput.required = true;
+        btnEmailSubmit.textContent = 'Create Account';
+        toggleEmailMode.textContent = 'Already have an account? Sign In';
+      } else {
+        confirmPasswordGroup.style.display = 'none';
+        confirmPasswordInput.required = false;
+        confirmPasswordInput.value = '';
+        btnEmailSubmit.textContent = 'Sign In with Email';
+        toggleEmailMode.textContent = 'Need an account? Sign Up';
+      }
+    });
+
+    emailLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      emailAuthError.style.display = 'none';
+      btnEmailSubmit.disabled = true;
+      btnEmailSubmit.textContent = isRegisterMode ? 'Creating Account...' : 'Signing In...';
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (isRegisterMode) {
+        const confirmPassword = confirmPasswordInput.value;
+        if (password !== confirmPassword) {
+          emailAuthError.textContent = 'Passwords do not match.';
+          emailAuthError.style.display = 'block';
+          btnEmailSubmit.disabled = false;
+          btnEmailSubmit.textContent = 'Create Account';
+          return;
+        }
+        if (password.length < 6) {
+          emailAuthError.textContent = 'Password must be at least 6 characters.';
+          emailAuthError.style.display = 'block';
+          btnEmailSubmit.disabled = false;
+          btnEmailSubmit.textContent = 'Create Account';
+          return;
+        }
+      }
+
+      try {
+        if (isRegisterMode) {
+          const result = await auth.createUserWithEmailAndPassword(email, password);
+          console.log('[AUTH] Registered email user:', result.user.uid);
+        } else {
+          const result = await auth.signInWithEmailAndPassword(email, password);
+          console.log('[AUTH] Logged in email user:', result.user.uid);
+        }
+      } catch (err) {
+        console.error('Email auth error:', err);
+        emailAuthError.textContent = err.message;
+        emailAuthError.style.display = 'block';
+        btnEmailSubmit.disabled = false;
+        btnEmailSubmit.textContent = isRegisterMode ? 'Create Account' : 'Sign In with Email';
+      }
+    });
+  </script>
+</body>
+</html>
