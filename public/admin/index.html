@@ -41,6 +41,11 @@
           <input type="password" id="admin-password" placeholder="••••••••" required autocomplete="current-password">
         </div>
 
+        <div class="form-group-field" id="admin-name-group" style="display: none;">
+          <label for="admin-name">Full Name</label>
+          <input type="text" id="admin-name" placeholder="Administrator Name" autocomplete="name">
+        </div>
+
         <div class="form-group-field" id="confirm-password-group" style="display: none;">
           <label for="admin-confirm-password">Confirm Password</label>
           <input type="password" id="admin-confirm-password" placeholder="••••••••" autocomplete="new-password">
@@ -92,10 +97,14 @@
     const formSub = document.querySelector('.login-brand-header p');
 
     let isRegisterMode = false;
+    window.isAdminRegistering = false;
 
     // Monitor Auth State - if already logged in, redirect to dashboard
     auth.onAuthStateChanged((user) => {
       if (user) {
+        if (window.isAdminRegistering) {
+          return;
+        }
         window.location.href = 'dashboard.html';
       } else {
         document.body.style.display = 'flex';
@@ -111,6 +120,8 @@
         formSub.textContent = 'Register a new administrative console user';
         confirmPasswordGroup.style.display = 'flex';
         confirmPasswordInput.required = true;
+        document.getElementById('admin-name-group').style.display = 'flex';
+        document.getElementById('admin-name').required = true;
         btnSubmit.textContent = 'Create Admin Account';
         toggleAuthMode.textContent = 'Already have an account? Sign In';
         passwordInput.placeholder = 'At least 6 characters';
@@ -120,6 +131,9 @@
         confirmPasswordGroup.style.display = 'none';
         confirmPasswordInput.required = false;
         confirmPasswordInput.value = '';
+        document.getElementById('admin-name-group').style.display = 'none';
+        document.getElementById('admin-name').required = false;
+        document.getElementById('admin-name').value = '';
         btnSubmit.textContent = 'Sign In to Portal';
         toggleAuthMode.textContent = 'Need to register? Create Admin Account';
         passwordInput.placeholder = '••••••••';
@@ -156,13 +170,21 @@
 
       try {
         if (isRegisterMode) {
-          await auth.createUserWithEmailAndPassword(email, password);
+          window.isAdminRegistering = true;
+          const result = await auth.createUserWithEmailAndPassword(email, password);
+          const fullName = document.getElementById('admin-name').value.trim();
+          await result.user.updateProfile({ displayName: fullName });
+          localStorage.setItem('sp_admin_name', fullName);
         } else {
-          await auth.signInWithEmailAndPassword(email, password);
+          const result = await auth.signInWithEmailAndPassword(email, password);
+          if (result.user.displayName) {
+            localStorage.setItem('sp_admin_name', result.user.displayName);
+          }
         }
-        // Successful login will trigger onAuthStateChanged redirect
+        window.location.href = 'dashboard.html';
       } catch (err) {
         console.error('Auth error:', err);
+        window.isAdminRegistering = false;
         errorMsg.textContent = `${isRegisterMode ? 'Registration' : 'Login'} Failed: ${err.message}`;
         errorMsg.style.display = 'block';
         btnSubmit.disabled = false;

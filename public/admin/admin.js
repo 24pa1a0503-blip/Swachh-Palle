@@ -23,10 +23,15 @@ const btnAdminLogout = document.getElementById('btn-admin-logout');
 
 const navTriage = document.getElementById('nav-triage');
 const navCitizens = document.getElementById('nav-citizens');
+const navLeaderboard = document.getElementById('nav-leaderboard');
 const triageView = document.getElementById('triage-view');
 const citizensView = document.getElementById('citizens-view');
+const leaderboardView = document.getElementById('leaderboard-view');
 const citizensTbody = document.getElementById('citizens-tbody');
+const leaderboardTbody = document.getElementById('leaderboard-tbody');
 const btnClearDemoCitizens = document.getElementById('btn-clear-demo-citizens');
+
+let selectedResolutionImageBase64 = '';
 
 // Modal Elements
 const ticketModal = document.getElementById('ticket-modal');
@@ -352,11 +357,14 @@ function showModal(ticket) {
   }
 
   // Reset file upload field & preview
+  selectedResolutionImageBase64 = '';
   const resUploadGroup = document.getElementById('resolution-upload-group');
   const fileInput = document.getElementById('modal-resolve-file');
+  const cameraInput = document.getElementById('modal-resolve-camera');
   const previewContainer = document.getElementById('modal-resolve-preview-container');
   const previewImg = document.getElementById('modal-resolve-preview');
   if (fileInput) fileInput.value = '';
+  if (cameraInput) cameraInput.value = '';
   if (previewContainer) previewContainer.style.display = 'none';
   if (previewImg) previewImg.src = '';
 
@@ -424,22 +432,12 @@ window.updateTicketVerification = async function(id, verificationStatus, resolve
 };
 
 window.handleResolveIncident = async function(id) {
-  const fileInput = document.getElementById('modal-resolve-file');
-  let base64 = '';
-  
-  if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-    alert('Please upload a resolution photo demonstrating the clean-up before resolving this incident.');
+  if (!selectedResolutionImageBase64) {
+    alert('Please capture a photo or upload a resolution file demonstrating the clean-up before resolving this incident.');
     return;
   }
   
-  const file = fileInput.files[0];
-  base64 = await new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
-    reader.readAsDataURL(file);
-  });
-  
-  await updateTicketVerification(id, 'Valid & Resolved', base64);
+  await updateTicketVerification(id, 'Valid & Resolved', selectedResolutionImageBase64);
 };
 
 // 7b. Citizen Management API interactions
@@ -483,6 +481,43 @@ async function loadCitizens() {
   }
 }
 
+// 7c. Leaderboard API interactions
+async function loadLeaderboard() {
+  leaderboardTbody.innerHTML = `<tr><td colspan="4" class="table-loading">SYS_CONNECT: DOWNLOADING CITIZEN LEADERBOARD...</td></tr>`;
+  try {
+    const res = await fetch(`${API_BASE}/api/leaderboard`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      const standings = json.data;
+      if (standings.length === 0) {
+        leaderboardTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">LEADERBOARD_EMPTY: NO CIVIC STANDINGS RECORDED</td></tr>`;
+        return;
+      }
+      leaderboardTbody.innerHTML = standings.map((citizen, index) => {
+        const rankNum = index + 1;
+        let rankBadge = `${rankNum}`;
+        if (rankNum === 1) rankBadge = '🥇 1';
+        else if (rankNum === 2) rankBadge = '🥈 2';
+        else if (rankNum === 3) rankBadge = '🥉 3';
+
+        return `
+          <tr>
+            <td style="font-weight: 700;">${rankBadge}</td>
+            <td class="col-ticket-id">${citizen.id}</td>
+            <td>${citizen.name}</td>
+            <td style="font-weight: 600; color: var(--success-text);">${citizen.civicPoints || 0}</td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      leaderboardTbody.innerHTML = `<tr><td colspan="4" class="table-loading" style="color: var(--primary-accent);">FEED_ERROR: FAILED TO FETCH LEADERBOARD</td></tr>`;
+    }
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    leaderboardTbody.innerHTML = `<tr><td colspan="4" class="table-loading" style="color: var(--primary-accent);">FEED_ERROR: CONNECTION REFUSED</td></tr>`;
+  }
+}
+
 window.deleteCitizen = async function(id) {
   if (!confirm('Are you sure you want to permanently delete this citizen? This action cannot be undone.')) {
     return;
@@ -515,13 +550,15 @@ function setupEventListeners() {
   });
 
   // Sidebar tab toggling
-  if (navTriage && navCitizens) {
+  if (navTriage && navCitizens && navLeaderboard) {
     navTriage.addEventListener('click', (e) => {
       e.preventDefault();
       navTriage.classList.add('active');
       navCitizens.classList.remove('active');
+      navLeaderboard.classList.remove('active');
       triageView.style.display = 'block';
       citizensView.style.display = 'none';
+      leaderboardView.style.display = 'none';
       if (map) {
         map.invalidateSize();
       }
@@ -531,9 +568,22 @@ function setupEventListeners() {
       e.preventDefault();
       navCitizens.classList.add('active');
       navTriage.classList.remove('active');
+      navLeaderboard.classList.remove('active');
       triageView.style.display = 'none';
       citizensView.style.display = 'block';
+      leaderboardView.style.display = 'none';
       loadCitizens();
+    });
+
+    navLeaderboard.addEventListener('click', (e) => {
+      e.preventDefault();
+      navLeaderboard.classList.add('active');
+      navTriage.classList.remove('active');
+      navCitizens.classList.remove('active');
+      triageView.style.display = 'none';
+      citizensView.style.display = 'none';
+      leaderboardView.style.display = 'block';
+      loadLeaderboard();
     });
   }
 
@@ -586,22 +636,70 @@ function setupEventListeners() {
   });
 
   const resolveFileInput = document.getElementById('modal-resolve-file');
+  const resolveCameraInput = document.getElementById('modal-resolve-camera');
   const resolvePreviewContainer = document.getElementById('modal-resolve-preview-container');
   const resolvePreview = document.getElementById('modal-resolve-preview');
+  const selectedSourceBadge = document.getElementById('selected-source-badge');
+
+  const btnResolveCamera = document.getElementById('btn-resolve-camera');
+  const btnResolveFile = document.getElementById('btn-resolve-file');
+
+  if (btnResolveCamera) {
+    btnResolveCamera.addEventListener('click', () => resolveCameraInput.click());
+  }
+  if (btnResolveFile) {
+    btnResolveFile.addEventListener('click', () => resolveFileInput.click());
+  }
+
+  const processFile = (file, sourceName) => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        selectedResolutionImageBase64 = evt.target.result;
+        resolvePreview.src = selectedResolutionImageBase64;
+        resolvePreviewContainer.style.display = 'block';
+        if (selectedSourceBadge) {
+          selectedSourceBadge.textContent = sourceName;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (resolveFileInput) {
     resolveFileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          resolvePreview.src = evt.target.result;
-          resolvePreviewContainer.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-      } else {
-        resolvePreviewContainer.style.display = 'none';
-        resolvePreview.src = '';
-      }
+      processFile(e.target.files[0], 'Gallery/File');
+      if (resolveCameraInput) resolveCameraInput.value = '';
+    });
+  }
+  if (resolveCameraInput) {
+    resolveCameraInput.addEventListener('change', (e) => {
+      processFile(e.target.files[0], 'Camera');
+      if (resolveFileInput) resolveFileInput.value = '';
+    });
+  }
+
+  // Hamburger menu toggle for mobile
+  const btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  if (btnSidebarToggle && sidebar && sidebarBackdrop) {
+    btnSidebarToggle.addEventListener('click', () => {
+      sidebar.classList.add('active');
+      sidebarBackdrop.classList.add('active');
+    });
+
+    const closeDrawer = () => {
+      sidebar.classList.remove('active');
+      sidebarBackdrop.classList.remove('active');
+    };
+
+    sidebarBackdrop.addEventListener('click', closeDrawer);
+
+    // Close drawer when sidebar nav link is clicked
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('click', closeDrawer);
     });
   }
 

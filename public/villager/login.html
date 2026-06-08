@@ -76,6 +76,11 @@
           <input type="password" id="login-confirm-password" placeholder="••••••••">
         </div>
 
+        <div class="form-group" id="name-group" style="display: none;">
+          <label for="login-name">Full Name</label>
+          <input type="text" id="login-name" placeholder="John Doe">
+        </div>
+
         <div id="email-auth-error" style="color: var(--error); font-size: 0.8rem; font-weight: 500; margin-bottom: 16px; display: none; text-align: left;"></div>
 
         <button type="submit" id="btn-email-submit" class="btn-primary">Sign In with Email</button>
@@ -83,6 +88,21 @@
         <div style="text-align: center; margin-top: 16px;">
           <a href="#" id="toggle-email-mode" style="color: var(--primary); font-size: 13px; text-decoration: none; font-weight: 600;">Need an account? Sign Up</a>
         </div>
+      </form>
+    </div>
+
+    <!-- Tab 3: Phone Name Setup (Only for new users) -->
+    <div id="phone-name-setup-container" style="display: none; padding-top: 8px;">
+      <div style="text-align: center; margin-bottom: 16px;">
+        <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary);">Complete Registration</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Welcome! Please enter your Full Name to complete your profile setup.</p>
+      </div>
+      <form id="phone-name-setup-form">
+        <div class="form-group">
+          <label for="phone-name-input">Full Name</label>
+          <input type="text" id="phone-name-input" placeholder="Enter your name" required>
+        </div>
+        <button type="submit" id="btn-phone-name-submit" class="btn-primary">Complete Setup</button>
       </form>
     </div>
   </div>
@@ -105,10 +125,25 @@
     // Disable reCAPTCHA verification for local testing with fictional numbers
     auth.settings.appVerificationDisabledForTesting = true;
 
+    window.isPhoneRegistering = false;
+    window.isEmailRegistering = false;
+
     // Monitor Auth State - if already logged in, redirect to index.html
     auth.onAuthStateChanged((user) => {
       if (user) {
-        window.location.href = 'index.html';
+        if (window.isPhoneRegistering || window.isEmailRegistering) {
+          return;
+        }
+        if (user.displayName) {
+          window.location.href = 'index.html';
+        } else {
+          window.isPhoneRegistering = true;
+          // Hide login forms
+          document.getElementById('phone-login-container').style.display = 'none';
+          document.getElementById('email-login-container').style.display = 'none';
+          document.querySelector('.login-tabs').style.display = 'none';
+          showPhoneNameSetupForm(user);
+        }
       }
     });
 
@@ -204,6 +239,19 @@
         const result = await confirmationResult.confirm(otp);
         const user = result.user;
         console.log('[AUTH] Verified phone user:', user.uid);
+        
+        if (user.displayName) {
+          localStorage.setItem('sp_user_name', user.displayName);
+          window.location.href = 'index.html';
+        } else {
+          window.isPhoneRegistering = true;
+          // Hide login forms
+          document.getElementById('phone-login-container').style.display = 'none';
+          document.getElementById('email-login-container').style.display = 'none';
+          document.querySelector('.login-tabs').style.display = 'none';
+          
+          showPhoneNameSetupForm(user);
+        }
       } catch (error) {
         console.error('Error verifying SMS code:', error);
         alert('Invalid OTP code. Please try again. Error: ' + error.message);
@@ -211,6 +259,43 @@
         btnVerifyOtp.textContent = 'Verify & Sign In';
       }
     });
+
+    function showPhoneNameSetupForm(user) {
+      window.isPhoneRegistering = true;
+      const setupContainer = document.getElementById('phone-name-setup-container');
+      setupContainer.style.display = 'block';
+      
+      const form = document.getElementById('phone-name-setup-form');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fullName = document.getElementById('phone-name-input').value.trim();
+        if (!fullName) return;
+        
+        const btnSubmit = document.getElementById('btn-phone-name-submit');
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Saving...';
+        
+        try {
+          await user.updateProfile({ displayName: fullName });
+          localStorage.setItem('sp_user_name', fullName);
+          
+          const apiBaseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? ''
+            : 'https://swachh-palle.onrender.com';
+            
+          await fetch(`${apiBaseUrl}/api/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: user.uid, name: fullName })
+          });
+          
+          window.location.href = 'index.html';
+        } catch (err) {
+          console.error(err);
+          window.location.href = 'index.html';
+        }
+      });
+    }
 
     // Enable change phone number
     btnChangePhone.addEventListener('click', () => {
@@ -240,12 +325,17 @@
       if (isRegisterMode) {
         confirmPasswordGroup.style.display = 'block';
         confirmPasswordInput.required = true;
+        document.getElementById('name-group').style.display = 'block';
+        document.getElementById('login-name').required = true;
         btnEmailSubmit.textContent = 'Create Account';
         toggleEmailMode.textContent = 'Already have an account? Sign In';
       } else {
         confirmPasswordGroup.style.display = 'none';
         confirmPasswordInput.required = false;
         confirmPasswordInput.value = '';
+        document.getElementById('name-group').style.display = 'none';
+        document.getElementById('login-name').required = false;
+        document.getElementById('login-name').value = '';
         btnEmailSubmit.textContent = 'Sign In with Email';
         toggleEmailMode.textContent = 'Need an account? Sign Up';
       }
@@ -280,11 +370,32 @@
 
       try {
         if (isRegisterMode) {
+          window.isEmailRegistering = true;
           const result = await auth.createUserWithEmailAndPassword(email, password);
+          const fullName = document.getElementById('login-name').value.trim();
+          await result.user.updateProfile({ displayName: fullName });
+          localStorage.setItem('sp_user_name', fullName);
           console.log('[AUTH] Registered email user:', result.user.uid);
+          
+          // Call the backend API to save the user
+          const apiBaseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? ''
+            : 'https://swachh-palle.onrender.com';
+            
+          await fetch(`${apiBaseUrl}/api/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: result.user.uid, name: fullName })
+          });
+          
+          window.location.href = 'index.html';
         } else {
           const result = await auth.signInWithEmailAndPassword(email, password);
+          if (result.user.displayName) {
+            localStorage.setItem('sp_user_name', result.user.displayName);
+          }
           console.log('[AUTH] Logged in email user:', result.user.uid);
+          window.location.href = 'index.html';
         }
       } catch (err) {
         console.error('Email auth error:', err);
