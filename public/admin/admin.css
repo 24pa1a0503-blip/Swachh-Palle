@@ -943,6 +943,52 @@ body {
 
 /* Responsive Design System Media Queries */
 @media (max-width: 768px) {
+  body {
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .dashboard-wrapper {
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    display: block;
+  }
+
+  .main-content {
+    height: auto !important;
+    min-height: 100vh;
+    overflow: visible !important;
+  }
+
+  #triage-view, #citizens-view, #leaderboard-view, #analytics-view {
+    height: auto !important;
+    overflow: visible !important;
+    flex: none !important;
+    display: block !important;
+  }
+
+  .triage-section {
+    height: auto !important;
+    overflow: visible !important;
+    flex: none !important;
+    padding: 16px !important;
+  }
+
+  .table-card {
+    height: auto !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  .table-wrapper {
+    height: auto !important;
+    overflow-y: visible !important;
+    overflow-x: auto !important;
+    max-height: none !important;
+  }
+
   /* Sidebar Collapsible Drawer */
   .sidebar {
     position: fixed;
