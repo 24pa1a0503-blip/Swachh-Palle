@@ -63,6 +63,10 @@
           <span class="material-symbols-outlined">leaderboard</span>
           <span class="nav-label" data-i18n="nav_activity">Activity</span>
         </button>
+        <button class="nav-item" data-tab="tab-analytics">
+          <span class="material-symbols-outlined">trending_up</span>
+          <span class="nav-label" data-i18n="nav_analytics">Analytics</span>
+        </button>
         <button class="nav-item" data-tab="tab-profile">
           <span class="material-symbols-outlined">person</span>
           <span class="nav-label" data-i18n="nav_profile">Profile</span>
@@ -102,12 +106,12 @@
             <div class="card-header">
               <span class="material-symbols-outlined card-icon text-green">analytics</span>
               <h3 data-i18n="clean_index">Village Cleanliness</h3>
-              <span class="percentage">78%</span>
+              <span class="percentage" id="cleanliness-percentage">0%</span>
             </div>
             <div class="progress-container">
-              <div class="progress-bar" style="width: 78%;"></div>
+              <div class="progress-bar" id="cleanliness-progress-bar" style="width: 0%;"></div>
             </div>
-            <p class="card-footer" data-i18n="clean_index_sub">Level Up! 5 reports resolved this week.</p>
+            <p class="card-footer" id="cleanliness-footer" data-i18n="clean_index_sub">Level Up! 5 reports resolved this week.</p>
           </div>
 
           <!-- Quick Guidelines -->
@@ -167,6 +171,85 @@
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- Tab 4: Analytics -->
+      <section id="tab-analytics" class="tab-panel">
+        <div class="analytics-grid" style="display: flex; flex-direction: column; gap: 20px; padding: 16px;">
+          
+          <div class="section-title-wrapper" style="margin-bottom: 0;">
+            <h2 data-i18n="analytics_title">Village Analytics Dashboard</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Real-time cleanliness trends and civic contribution insights.</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+            <div class="stats-card" style="margin-bottom: 0; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">TOTAL ALERTS</span>
+              <span id="analytics-total-count" style="font-size: 24px; font-weight: 800; color: var(--primary);">0</span>
+            </div>
+            <div class="stats-card" style="margin-bottom: 0; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">RESOLVED ISSUES</span>
+              <span id="analytics-resolved-count" style="font-size: 24px; font-weight: 800; color: var(--success);">0</span>
+            </div>
+            <div class="stats-card" style="margin-bottom: 0; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">ACTIVE AUDITS</span>
+              <span id="analytics-pending-count" style="font-size: 24px; font-weight: 800; color: var(--warning);">0</span>
+            </div>
+          </div>
+
+          <div class="stats-card" style="padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: bold; font-size: 15px; color: var(--text-primary);">Overall Cleanliness Index</span>
+              <span id="analytics-cleanliness-score" style="font-weight: 800; color: var(--success); font-size: 20px;">100%</span>
+            </div>
+            <div class="progress-container" style="background: rgba(0,0,0,0.05); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div id="analytics-cleanliness-bar" class="progress-bar" style="background: var(--success); height: 100%; width: 100%;"></div>
+            </div>
+            <p id="analytics-cleanliness-sub" style="font-size: 11px; color: var(--text-muted); margin: 0;">Calculated dynamically from approved vs pending reports.</p>
+          </div>
+
+          <div class="stats-card" style="padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; gap: 16px;">
+            <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0;">Reports Category Volume</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                  <span>🗑️ Full Dustbins</span>
+                  <span id="analytics-dustbin-count" style="font-weight: bold;">0</span>
+                </div>
+                <div style="background: rgba(0,0,0,0.05); height: 6px; border-radius: 3px; overflow: hidden;">
+                  <div id="analytics-dustbin-bar" style="background: #0052cc; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+              </div>
+              
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                  <span>💧 Blocked Drains</span>
+                  <span id="analytics-drain-count" style="font-weight: bold;">0</span>
+                </div>
+                <div style="background: rgba(0,0,0,0.05); height: 6px; border-radius: 3px; overflow: hidden;">
+                  <div id="analytics-drain-bar" style="background: #36b37e; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+          <div class="stats-card" style="padding: 20px; background: linear-gradient(135deg, rgba(0, 82, 204, 0.05) 0%, rgba(54, 179, 126, 0.05) 100%); border: 1px solid rgba(0, 82, 204, 0.1); border-radius: 12px; display: flex; flex-direction: column; gap: 12px;">
+            <h3 style="font-size: 14px; font-weight: 700; color: var(--primary); margin: 0;">Your Contribution Metrics</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div style="text-align: center; border-right: 1px solid var(--border);">
+                <div id="analytics-my-reports" style="font-size: 28px; font-weight: 800; color: var(--text-primary);">0</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Reports Filed</div>
+              </div>
+              <div style="text-align: center;">
+                <div id="analytics-my-points" style="font-size: 28px; font-weight: 800; color: var(--success-text);">0</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Points Earned</div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -249,6 +332,12 @@
           <span class="material-symbols-outlined">leaderboard</span>
         </div>
         <span class="nav-label" data-i18n="nav_activity">Activity</span>
+      </button>
+      <button class="nav-item" data-tab="tab-analytics">
+        <div class="nav-pill">
+          <span class="material-symbols-outlined">trending_up</span>
+        </div>
+        <span class="nav-label" data-i18n="nav_analytics">Analytics</span>
       </button>
       <button class="nav-item" data-tab="tab-profile">
         <div class="nav-pill">

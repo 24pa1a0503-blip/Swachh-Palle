@@ -62,6 +62,10 @@
           <span class="material-symbols-outlined">leaderboard</span>
           Leaderboard
         </a>
+        <a href="#" id="nav-analytics" class="nav-link">
+          <span class="material-symbols-outlined">trending_up</span>
+          Analytics Hub
+        </a>
       </nav>
 
       <!-- Sidebar summary statistics -->
@@ -254,6 +258,88 @@
               </table>
             </div>
           </div>
+        </section>
+      </div>
+
+      <!-- Analytics View Container (Hidden by default) -->
+      <div id="analytics-view" style="display: none;">
+        <section class="triage-section" style="gap: 20px;">
+          
+          <div class="table-card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;">
+            <div class="table-header" style="border-bottom: none; padding: 0;">
+              <h3>Administrative Analytics Telemetry</h3>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">System performance KPIs, reports category breakdowns, and audit rates.</p>
+            </div>
+
+            <!-- Dashboard Row 1: KPI Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div class="metric-card" style="background: var(--surface-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Total Telemetry Tickets</span>
+                <span id="admin-analytics-total" style="font-size: 28px; font-weight: bold; color: var(--primary);">0</span>
+              </div>
+              <div class="metric-card" style="background: var(--surface-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Verification Rate</span>
+                <span id="admin-analytics-rate" style="font-size: 28px; font-weight: bold; color: var(--success-text);">0%</span>
+              </div>
+              <div class="metric-card" style="background: var(--surface-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Spam Rejection Rate</span>
+                <span id="admin-analytics-spam-rate" style="font-size: 28px; font-weight: bold; color: var(--critical-text);">0%</span>
+              </div>
+            </div>
+
+            <!-- Dashboard Row 2: Charts and Graphs -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+              
+              <!-- Category Volumes Chart -->
+              <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+                <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase;">Sanitation Category Volume</h4>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                      <span>🗑️ Full Dustbins</span>
+                      <span id="admin-analytics-dustbins" style="font-weight: bold;">0</span>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.05); height: 8px; border-radius: 4px; overflow: hidden;">
+                      <div id="admin-analytics-dustbins-bar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                      <span>💧 Blocked Drains</span>
+                      <span id="admin-analytics-drains" style="font-weight: bold;">0</span>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.05); height: 8px; border-radius: 4px; overflow: hidden;">
+                      <div id="admin-analytics-drains-bar" style="background: var(--success); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Ticket States Distribution -->
+              <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+                <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase;">Ticket Lifecycle States</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                    <span>Pending Administrative Verification</span>
+                    <span id="admin-analytics-pending" style="font-weight: bold; color: var(--warning-text);">0</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                    <span>Approved & Resolved</span>
+                    <span id="admin-analytics-resolved" style="font-weight: bold; color: var(--success-text);">0</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 12px; padding-bottom: 2px;">
+                    <span>Spam / Rejected Alerts</span>
+                    <span id="admin-analytics-rejected" style="font-weight: bold; color: var(--text-muted);">0</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </section>
       </div>
 

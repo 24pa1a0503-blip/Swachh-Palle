@@ -19,6 +19,8 @@ const translations = {
     points_label: "Points",
     clean_index: "Village Cleanliness",
     clean_index_sub: "Level Up! 5 reports resolved this week.",
+    nav_analytics: "Analytics",
+    analytics_title: "Village Analytics Dashboard",
     how_it_works: "How to Earn Rewards:",
     step_1: "Click 'REPORT' and take a clear picture of trash or blocked drains.",
     step_2: "Ensure GPS location is enabled before submitting.",
@@ -74,6 +76,8 @@ const translations = {
     points_label: "పాయింట్లు",
     clean_index: "గ్రామ పరిశుభ్రత",
     clean_index_sub: "లెవెల్ అప్! ఈ వారం 5 నివేదికలు పరిష్కరించబడ్డాయి.",
+    nav_analytics: "విశ్లేషణ",
+    analytics_title: "గ్రామ విశ్లేషణ డాష్‌బోర్డ్",
     how_it_works: "రివార్డులు ఎలా సంపాదించాలి:",
     step_1: " 'నివేదించు' పై క్లిక్ చేసి, చెత్త లేదా మూసుకుపోయిన కాలువను ఫోటో తీయండి.",
     step_2: "సమర్పించే ముందు GPS లొకేషన్ ఆన్ లో ఉందని నిర్ధారించుకోండి.",
@@ -189,6 +193,7 @@ function setupAuthMonitor() {
     if (user) {
       console.log('[AUTH] User is active:', user.uid);
       await syncUserProfile(user);
+      fetchTickets();
       btnLogout.style.display = 'block';
     } else {
       console.log('[AUTH] No user logged in, redirecting...');
@@ -350,6 +355,8 @@ function setupTabs() {
       if (targetTab === 'tab-activity') {
         fetchTickets();
         fetchLeaderboard();
+      } else if (targetTab === 'tab-analytics') {
+        fetchTickets();
       } else if (targetTab === 'tab-profile') {
         loadUserProfile();
       }
@@ -394,6 +401,61 @@ async function fetchTickets() {
       // Update submitted count in profile
       const userTickets = tickets.filter(t => t.reporterId === currentUser.id);
       profileReportsCount.textContent = userTickets.length;
+
+      // Calculate Cleanliness Index and Analytics
+      const pendingCount = tickets.filter(t => t.status === 'Pending').length;
+      const resolvedCount = tickets.filter(t => t.status === 'Resolved').length;
+      const validTickets = resolvedCount + pendingCount;
+      const cleanlinessIndex = validTickets > 0 ? Math.round((resolvedCount / validTickets) * 100) : 100;
+
+      // Update home card
+      const pctEl = document.getElementById('cleanliness-percentage');
+      const barEl = document.getElementById('cleanliness-progress-bar');
+      const footerEl = document.getElementById('cleanliness-footer');
+      if (pctEl) pctEl.textContent = `${cleanlinessIndex}%`;
+      if (barEl) barEl.style.width = `${cleanlinessIndex}%`;
+      if (footerEl) {
+        if (currentLang === 'en') {
+          footerEl.textContent = `${resolvedCount} of ${validTickets} issues resolved`;
+        } else {
+          footerEl.textContent = `${validTickets} సమస్యలలో ${resolvedCount} పరిష్కరించబడ్డాయి`;
+        }
+      }
+
+      // Update Analytics tab
+      const dustbinCount = tickets.filter(t => t.category.includes('Dustbin')).length;
+      const drainCount = tickets.filter(t => t.category.includes('Drain')).length;
+      const totalCount = tickets.length;
+      
+      const maxCount = Math.max(dustbinCount, drainCount, 1);
+      const dustbinPercent = Math.round((dustbinCount / maxCount) * 100);
+      const drainPercent = Math.round((drainCount / maxCount) * 100);
+
+      const elTotal = document.getElementById('analytics-total-count');
+      const elResolved = document.getElementById('analytics-resolved-count');
+      const elPending = document.getElementById('analytics-pending-count');
+      const elScore = document.getElementById('analytics-cleanliness-score');
+      const elBar = document.getElementById('analytics-cleanliness-bar');
+      const elDustbinCount = document.getElementById('analytics-dustbin-count');
+      const elDustbinBar = document.getElementById('analytics-dustbin-bar');
+      const elDrainCount = document.getElementById('analytics-drain-count');
+      const elDrainBar = document.getElementById('analytics-drain-bar');
+      const elMyReports = document.getElementById('analytics-my-reports');
+      const elMyPoints = document.getElementById('analytics-my-points');
+
+      if (elTotal) elTotal.textContent = totalCount;
+      if (elResolved) elResolved.textContent = resolvedCount;
+      if (elPending) elPending.textContent = pendingCount;
+      if (elScore) elScore.textContent = `${cleanlinessIndex}%`;
+      if (elBar) elBar.style.width = `${cleanlinessIndex}%`;
+      
+      if (elDustbinCount) elDustbinCount.textContent = dustbinCount;
+      if (elDustbinBar) elDustbinBar.style.width = `${dustbinPercent}%`;
+      if (elDrainCount) elDrainCount.textContent = drainCount;
+      if (elDrainBar) elDrainBar.style.width = `${drainPercent}%`;
+
+      if (elMyReports) elMyReports.textContent = userTickets.length;
+      if (elMyPoints) elMyPoints.textContent = currentUser.civicPoints || 0;
 
       if (tickets.length === 0) {
         ticketsList.innerHTML = `<div class="list-placeholder">${translations[currentLang].no_data}</div>`;

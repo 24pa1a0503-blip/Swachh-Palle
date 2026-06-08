@@ -232,6 +232,13 @@ body {
   position: relative;
 }
 
+#triage-view, #citizens-view, #leaderboard-view, #analytics-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* Header bar */
 .sys-header {
   display: flex;
@@ -1052,5 +1059,9 @@ body {
   /* Action buttons scaling */
   .verification-actions {
     grid-template-columns: 1fr; /* Stack verification buttons on narrow screen */
+  }
+
+  .map-section {
+    height: 250px !important;
   }
 }

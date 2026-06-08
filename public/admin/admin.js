@@ -27,6 +27,8 @@ const navLeaderboard = document.getElementById('nav-leaderboard');
 const triageView = document.getElementById('triage-view');
 const citizensView = document.getElementById('citizens-view');
 const leaderboardView = document.getElementById('leaderboard-view');
+const navAnalytics = document.getElementById('nav-analytics');
+const analyticsView = document.getElementById('analytics-view');
 const citizensTbody = document.getElementById('citizens-tbody');
 const leaderboardTbody = document.getElementById('leaderboard-tbody');
 const btnClearDemoCitizens = document.getElementById('btn-clear-demo-citizens');
@@ -93,6 +95,9 @@ async function loadData() {
       updateDashboardMetrics();
       renderTable();
       renderMarkers();
+      if (analyticsView && analyticsView.style.display === 'block') {
+        loadAdminAnalytics();
+      }
     } else {
       triageTbody.innerHTML = `<tr><td colspan="6" class="table-loading" style="color: var(--primary-accent);">FEED_ERROR: FAILED TO FETCH DATA</td></tr>`;
     }
@@ -518,6 +523,50 @@ async function loadLeaderboard() {
   }
 }
 
+// 7d. Admin Analytics interactions
+function loadAdminAnalytics() {
+  const pendingCount = tickets.filter(t => t.status === 'Pending').length;
+  const resolvedCount = tickets.filter(t => t.status === 'Resolved').length;
+  const rejectedCount = tickets.filter(t => t.status === 'Rejected').length;
+  const totalCount = tickets.length;
+  
+  const validTickets = resolvedCount + pendingCount;
+  const cleanlinessIndex = validTickets > 0 ? Math.round((resolvedCount / validTickets) * 100) : 100;
+  const spamRate = totalCount > 0 ? Math.round((rejectedCount / totalCount) * 100) : 0;
+  
+  const dustbinsCount = tickets.filter(t => t.category.includes('Dustbin')).length;
+  const drainsCount = tickets.filter(t => t.category.includes('Drain')).length;
+  
+  const maxCategory = Math.max(dustbinsCount, drainsCount, 1);
+  const dustbinsPercent = Math.round((dustbinsCount / maxCategory) * 100);
+  const drainsPercent = Math.round((drainsCount / maxCategory) * 100);
+
+  const elTotal = document.getElementById('admin-analytics-total');
+  const elRate = document.getElementById('admin-analytics-rate');
+  const elSpamRate = document.getElementById('admin-analytics-spam-rate');
+  const elDustbins = document.getElementById('admin-analytics-dustbins');
+  const elDustbinsBar = document.getElementById('admin-analytics-dustbins-bar');
+  const elDrains = document.getElementById('admin-analytics-drains');
+  const elDrainsBar = document.getElementById('admin-analytics-drains-bar');
+  
+  const elPending = document.getElementById('admin-analytics-pending');
+  const elResolved = document.getElementById('admin-analytics-resolved');
+  const elRejected = document.getElementById('admin-analytics-rejected');
+
+  if (elTotal) elTotal.textContent = totalCount;
+  if (elRate) elRate.textContent = `${cleanlinessIndex}%`;
+  if (elSpamRate) elSpamRate.textContent = `${spamRate}%`;
+  
+  if (elDustbins) elDustbins.textContent = dustbinsCount;
+  if (elDustbinsBar) elDustbinsBar.style.width = `${dustbinsPercent}%`;
+  if (elDrains) elDrains.textContent = drainsCount;
+  if (elDrainsBar) elDrainsBar.style.width = `${drainsPercent}%`;
+  
+  if (elPending) elPending.textContent = pendingCount;
+  if (elResolved) elResolved.textContent = resolvedCount;
+  if (elRejected) elRejected.textContent = rejectedCount;
+}
+
 window.deleteCitizen = async function(id) {
   if (!confirm('Are you sure you want to permanently delete this citizen? This action cannot be undone.')) {
     return;
@@ -556,9 +605,11 @@ function setupEventListeners() {
       navTriage.classList.add('active');
       navCitizens.classList.remove('active');
       navLeaderboard.classList.remove('active');
+      if (navAnalytics) navAnalytics.classList.remove('active');
       triageView.style.display = 'block';
       citizensView.style.display = 'none';
       leaderboardView.style.display = 'none';
+      if (analyticsView) analyticsView.style.display = 'none';
       if (map) {
         map.invalidateSize();
       }
@@ -569,9 +620,11 @@ function setupEventListeners() {
       navCitizens.classList.add('active');
       navTriage.classList.remove('active');
       navLeaderboard.classList.remove('active');
+      if (navAnalytics) navAnalytics.classList.remove('active');
       triageView.style.display = 'none';
       citizensView.style.display = 'block';
       leaderboardView.style.display = 'none';
+      if (analyticsView) analyticsView.style.display = 'none';
       loadCitizens();
     });
 
@@ -580,11 +633,28 @@ function setupEventListeners() {
       navLeaderboard.classList.add('active');
       navTriage.classList.remove('active');
       navCitizens.classList.remove('active');
+      if (navAnalytics) navAnalytics.classList.remove('active');
       triageView.style.display = 'none';
       citizensView.style.display = 'none';
       leaderboardView.style.display = 'block';
+      if (analyticsView) analyticsView.style.display = 'none';
       loadLeaderboard();
     });
+
+    if (navAnalytics) {
+      navAnalytics.addEventListener('click', (e) => {
+        e.preventDefault();
+        navAnalytics.classList.add('active');
+        navTriage.classList.remove('active');
+        navCitizens.classList.remove('active');
+        navLeaderboard.classList.remove('active');
+        triageView.style.display = 'none';
+        citizensView.style.display = 'none';
+        leaderboardView.style.display = 'none';
+        analyticsView.style.display = 'block';
+        loadAdminAnalytics();
+      });
+    }
   }
 
   if (btnClearDemoCitizens) {
