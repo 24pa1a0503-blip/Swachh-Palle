@@ -2,7 +2,11 @@ const firestore = firebase.firestore();
 
 // Dynamic API Base URL resolution for APK or separate deployment
 const API_BASE = (() => {
-  if (window.location.hostname === 'localhost' && (window.location.port === '3000' || window.location.port === '')) {
+  if (window.Capacitor) {
+    const savedUrl = localStorage.getItem('sp_backend_url');
+    return savedUrl || 'https://swachh-palle.onrender.com';
+  }
+  if (window.location.hostname === 'localhost' && window.location.port === '3000') {
     return '';
   }
   const savedUrl = localStorage.getItem('sp_backend_url');

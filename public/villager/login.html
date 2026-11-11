@@ -279,9 +279,9 @@
           await user.updateProfile({ displayName: fullName });
           localStorage.setItem('sp_user_name', fullName);
           
-          const apiBaseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            ? ''
-            : 'https://swachh-palle.onrender.com';
+          const apiBaseUrl = window.Capacitor
+            ? (localStorage.getItem('sp_backend_url') || 'https://swachh-palle.onrender.com')
+            : (((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port === '3000') ? '' : 'https://swachh-palle.onrender.com');
             
           await fetch(`${apiBaseUrl}/api/users`, {
             method: 'POST',
@@ -378,9 +378,9 @@
           console.log('[AUTH] Registered email user:', result.user.uid);
           
           // Call the backend API to save the user
-          const apiBaseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            ? ''
-            : 'https://swachh-palle.onrender.com';
+          const apiBaseUrl = window.Capacitor
+            ? (localStorage.getItem('sp_backend_url') || 'https://swachh-palle.onrender.com')
+            : (((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port === '3000') ? '' : 'https://swachh-palle.onrender.com');
             
           await fetch(`${apiBaseUrl}/api/users`, {
             method: 'POST',
